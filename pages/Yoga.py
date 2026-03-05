@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import json
 import base64
@@ -8,7 +9,17 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import JsonOutputParser
 from typing import List
 
-st.set_page_config(page_title="🧘 Yoga for Mental Health", layout="centered")
+st.set_page_config(
+    page_title="Yoga for Mental Health",
+    page_icon="assets/yoga_icon.svg", 
+    layout="centered"
+)
+
+# Read SVG content
+with open("assets/yoga_icon.svg", "r") as file:
+    svg_content = file.read()
+
+
 
 def load_lottiefile(filepath: str):
     try:
@@ -28,7 +39,30 @@ def get_base64_of_bin_file(bin_file):
         return ""
 
 lottie_yoga = load_lottiefile("assets/yoga_animation.json")
-background_image_path = "lavender.png"
+
+# --- Load Yoga Data ---
+try:
+    with open(os.path.join("data", "Yoga.json"), "r") as f:
+        yoga_data = json.load(f)
+except FileNotFoundError:
+    yoga_data = {}
+
+# --- Detect Theme & Palette ---
+current_theme = st.session_state.get("current_theme", None)
+if not current_theme:
+    from core.theme import get_current_theme  
+    current_theme = get_current_theme()
+
+is_dark = current_theme["name"] == "Dark"
+
+# --- Detect selected theme from session state ---
+selected_palette = st.session_state.get("palette_name", "Pink").lower()
+
+if is_dark:
+    background_image_path = "static_files/dark.png"
+else:
+    background_image_path = "static_files/yoga-bg.png"
+
 base64_background_image = get_base64_of_bin_file(background_image_path)
 
 st.markdown(f"""
@@ -52,7 +86,7 @@ html::before, body::before {{
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.3);
+    background: {'rgba(0,0,0,0.5)' if is_dark else 'rgba(255,255,255,0.3)'};
     z-index: -1;
 }}
 
@@ -70,8 +104,13 @@ div[style*="background:"]
     border: none !important;
 }}
 
-h1, h2, h3, h4, h5, h6, p, span, strong, div, label {{
-    color: #4a148c !important;
+h1 {{
+    color: rgb(214, 51, 108) !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}}
+
+h2, h3, h4, h5, h6, p, span, strong, div, label {{
+    color: {'#f0f0f0' if is_dark else 'rgba(49, 51, 63, 0.8)'} !important;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
 }}
 
@@ -89,6 +128,19 @@ div[data-testid="stVerticalBlock"]:has(div.stTextArea)
     border: 1px solid rgba(255, 255, 255, 0.8);
 }}
 
+.green-header {{
+    text-align: center;
+    font-weight: bold;
+    margin: 10px 0 5px 0;
+}}
+
+.description {{
+    text-align: start;
+    font-size: 16px;
+    font-weight: bold;
+    color: #155724;
+    margin-top: 0px;
+}}
 [data-testid="stSidebar"] {{
     background-color: rgba(253, 208, 232, 0.4) !important;
     border-right: 2px solid rgba(245, 167, 208, 0.6) !important;
@@ -113,26 +165,91 @@ div[style*="rgba(245"], div[style*="#f5"], div[style*="rgb(245"] {{
     box-shadow: none !important;
     visibility: hidden !important;
 }}
-
+div svg {{
+    width: 20px !important;
+    height: 20px !important;
+}}
 .block-container {{
+    max-width: 1000px !important; 
     padding-top: 2rem !important; 
     padding-left: 2rem !important;
     padding-right: 2rem !important;
     margin-top: 0rem !important;
 }}
 
-.lottie-container {{
-    margin-top: -20px;
-    margin-bottom: -10px;
-    padding: 15px;
-    border-radius: 12px;
-    background-color: rgba(252, 213, 236, 0.7);
+.white-header-tube {{
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 20px 20px 0px 0px;
+    padding: 0px 10px;
     display: flex;
-    justify-content: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    align-items: center;
+    justify-content: start;
+    gap: 12px;
+    width: full;
+    height: 3rem;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    border: 1px solid rgba(200, 200, 200, 0.4);
     backdrop-filter: blur(8px);
 }}
+.white-header-big-circle {{
+    width: 28px;                
+    height: 28px;
+    border-radius: 50%;
+    background-color: #c8e6c9; 
+    display: flex;
+    align-items: center;
+    justify-content: center;    
+}}
+
+.white-header-circle {{
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #193E20;
+}}
+
+.white-header-text {{
+    color: #193E20 !important;
+    font-size: 20px !important;
+    font-weight: 600;
+    display: flex;
+    gap: 8px;
+}}
+
+/* Label (the "How are you feeling today?" text) */
+div[data-testid="stTextArea"] label {{
+    font-size: 18px !important;  /* bigger font */
+    font-weight: 600 !important;
+    color: #4a148c !important;   /* purple accent */
+    margin-bottom: 5px !important;
+}}
+
+/* Text area */
+div[data-testid="stTextArea"] textarea {{
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    border-radius: 12px !important;
+    padding: 10px !important;
+    border: 1px solid rgba(200, 200, 200, 0.5) !important;
+    color: #333 !important;
+    font-size: 16px !important;
+    width: 100% !important;
+    resize: vertical !important;
+}}
+
+/* Placeholder */
+div[data-testid="stTextArea"] textarea::placeholder {{
+    color: rgba(100,100,100,0.6) !important;
+    font-style: italic;
+    font-size: 15px !important;
+}}
+
+/* Focus */
+div[data-testid="stTextArea"] textarea:focus {{
+    outline: none !important;
+    border: 1.5px solid #4a148c !important;
+    box-shadow: 0 0 8px rgba(74, 20, 140, 0.2);
+}}
+
 
 div[data-testid="stSelectbox"] * {{
     cursor: pointer !important;
@@ -147,7 +264,7 @@ div[data-baseweb="popover"] > div > ul {{
 }}
 
 div[data-baseweb="popover"] li {{
-    color: #4a148c !important;
+    color: rgba(49, 51, 63, 0.8) !important;
     font-weight: 500;
     transition: background-color 0.2s ease;
 }}
@@ -219,25 +336,31 @@ button[data-testid="stExpanderToggle"]:hover {{
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }}
 
+/* Button */
 div[data-testid="stButton"] > button {{
-    background: linear-gradient(to bottom, #ffffff, #f0f0f0);
-    color: #4a148c !important; 
-    border: 1px solid #cccccc !important; 
+    background-color: #1b5e20 !important; /* dark green */
+    border: 1px solid #145214 !important; 
     border-radius: 12px !important;
     font-weight: bold !important;
+    color: #ffffff !important; /* fallback */
     padding: 10px 20px !important;
-    box-shadow: 
-        0 4px 10px rgba(0, 0, 0, 0.1), 
-        inset 0 1px 0 rgba(255, 255, 255, 0.6); 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     transition: all 0.2s ease;
 }}
 
+/* Hover */
 div[data-testid="stButton"] > button:hover {{
-    background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
-    box-shadow: 
-        0 2px 5px rgba(0, 0, 0, 0.1), 
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background-color: #145214 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    color: #ffffff !important;
 }}
+
+/*  text inside (all inner spans/divs) */
+div[data-testid="stButton"] > button * {{
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}}
+
 
 p, li, strong, div {{
     color: #333 !important;
@@ -246,6 +369,91 @@ p, li, strong, div {{
 
 </style>
 """, unsafe_allow_html=True)
+
+# Add cursor trail effect with hearts only
+import streamlit.components.v1 as components
+components.html(r"""
+<script>
+(function() {
+    var targetWindow = window.parent !== window ? window.parent : window;
+    var targetDoc = targetWindow.document;
+    
+    if (targetWindow.__cursorTrailInit) return;
+    targetWindow.__cursorTrailInit = true;
+    
+    var trail = [];
+    var mx = 0, my = 0;
+    var len = 12;
+    var animationId = null;
+    var lastTime = 0;
+    var fps = 60;
+    var frameInterval = 1000 / fps;
+    
+    function createTrail() {
+        if (!targetDoc.body) {
+            setTimeout(createTrail, 100);
+            return;
+        }
+        
+        targetDoc.querySelectorAll('.ct-heart').forEach(function(el) { el.remove(); });
+        trail = [];
+        
+        for (var i = 0; i < len; i++) {
+            var d = targetDoc.createElement('div');
+            var symbol = '💕';
+            var color = '#ff69b4';
+            d.className = 'ct-heart';
+            d.textContent = symbol;
+            d.style.cssText = 'position:fixed;pointer-events:none;z-index:999999;font-size:' + (12 + i * 0.5) + 'px;color:' + color + ';text-shadow:0 0 8px ' + color + ',0 0 16px ' + color + ';opacity:' + ((len-i)/len * 0.8) + ';left:0;top:0;transform:translate(-50%,-50%) rotate(' + (i * 18) + 'deg);transition:opacity 0.2s;';
+            targetDoc.body.appendChild(d);
+            trail.push({el:d, x:targetWindow.innerWidth/2, y:targetWindow.innerHeight/2, rot:i*18});
+        }
+        
+        targetWindow.addEventListener('mousemove', function(e) {
+            mx = e.clientX;
+            my = e.clientY;
+        });
+        
+        function animate(currentTime) {
+            if (currentTime - lastTime < frameInterval) {
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+            lastTime = currentTime;
+            
+            for (var i = 0; i < trail.length; i++) {
+                var next = trail[i+1] || {x:mx, y:my};
+                trail[i].x += (next.x - trail[i].x) * 0.25;
+                trail[i].y += (next.y - trail[i].y) * 0.25;
+                trail[i].rot += 1.5;
+                
+                var transform = 'translate(-50%,-50%) rotate(' + trail[i].rot + 'deg) scale(' + (0.6 + i/len * 0.4) + ')';
+                trail[i].el.style.left = trail[i].x + 'px';
+                trail[i].el.style.top = trail[i].y + 'px';
+                trail[i].el.style.transform = transform;
+            }
+            animationId = requestAnimationFrame(animate);
+        }
+        animate();
+    }
+    
+    if (targetDoc.readyState === "complete") createTrail();
+    else targetWindow.addEventListener("load", createTrail);
+    
+    setTimeout(createTrail, 500);
+})();
+</script>
+""", height=0, width=0)
+
+# Dummy classes to bypass LangChain backend for frontend edits
+try:
+    from langchain_core.pydantic_v1 import BaseModel, Field
+except ModuleNotFoundError:
+    class BaseModel:
+        pass
+    def Field(*args, **kwargs):
+        return None
+
 class YogaAsana(BaseModel):
     sanskrit_name: str = Field(description="The Sanskrit name of the yoga pose.")
     english_name: str = Field(description="The English name of the yoga pose.")
@@ -311,13 +519,22 @@ def classify_intent(user_input):
     else:
         return "other"
 
-st.markdown('<div class="lottie-container">', unsafe_allow_html=True)
-if lottie_yoga:
-    st_lottie(lottie_yoga, height=220, key="yoga")
-st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #b833a2; margin-top: -15px;'>Yoga for Mental Wellness</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 17px;'>Tell me how you're feeling, and I'll suggest few calming yoga poses.</p>", unsafe_allow_html=True)
+# Header 
+st.markdown(f"""
+<div class="white-header-tube">
+    <div class="white-header-big-circle"><div class="white-header-circle"></div></div>
+    <h1 class="white-header-text"> Yoga for Mental Wellness</h1>
+</div>
+""", unsafe_allow_html=True)
+
+# Lottie animation
+if lottie_yoga:
+        st_lottie(lottie_yoga, height=280, key="yoga")
+
+# Description
+st.markdown('<p class="description">Tell me how you\'re feeling, and I\'ll suggest a few calming yoga poses.</p>', unsafe_allow_html=True)
+
 
 user_mood_input = st.text_area("How are you feeling today?", height=100, placeholder="e.g., I'm feeling really stressed and overwhelmed with work.", key="mood_input")
 
